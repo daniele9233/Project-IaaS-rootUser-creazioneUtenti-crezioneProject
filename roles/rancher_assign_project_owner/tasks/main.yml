@@ -71,19 +71,18 @@
   debug:
     msg: "{{ all_users.json.data[:2] }}"
 
-- name: Extract user IDs for each username
+- name: Build user ID mapping
   set_fact:
-    rancher_user_ids: >-
-      {{
-        rancher_user_ids | default({}) |
-        combine({
-          item.username: (
-            (all_users.json.data | selectattr('username', 'equalto', item.username) | list | first).id
-          )
-        })
-      }}
-  loop: "{{ project_owner_assignments }}"
-  ignore_errors: yes
+    rancher_user_ids: |
+      {%- set user_map = {} -%}
+      {%- for assignment in project_owner_assignments -%}
+        {%- for user in all_users.json.data -%}
+          {%- if user.username is defined and user.username == assignment.username -%}
+            {%- set _ = user_map.update({assignment.username: user.id}) -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ user_map }}
 
 - name: Debug extracted user IDs
   debug:
