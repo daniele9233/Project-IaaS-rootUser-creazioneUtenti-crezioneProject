@@ -42,7 +42,29 @@
     rancher_cluster_id: "{{ (rancher_clusters.json.data | first).id }}"
 
 # ===============================================================
-# Create Projects
+# Get existing projects to check for duplicates
+# ===============================================================
+- name: Get all existing projects from Rancher
+  delegate_to: localhost
+  uri:
+    url: "https://{{ rancher_domain }}/v3/projects"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ rancher_api_token }}"
+    validate_certs: no
+    return_content: yes
+  register: existing_projects
+
+- name: Build list of existing project names
+  set_fact:
+    existing_project_names: "{{ existing_projects.json.data | map(attribute='name') | list }}"
+
+- name: Debug existing projects
+  debug:
+    msg: "Found {{ existing_project_names | length }} existing projects: {{ existing_project_names }}"
+
+# ===============================================================
+# Create Projects (only if they don't exist)
 # ===============================================================
 - name: Create Rancher Projects
   delegate_to: localhost
@@ -61,11 +83,22 @@
       clusterId: "{{ rancher_cluster_id }}"
     status_code: [201, 409]
   loop: "{{ rancher_projects }}"
+  when: item.name not in existing_project_names
   register: created_projects
 
 - name: Debug created projects
   debug:
-    msg: "Project '{{ item.item.name }}' created or already exists (status: {{ item.status }})"
+    msg: "Project '{{ item.item.name }}' created successfully"
   loop: "{{ created_projects.results }}"
-  when: created_projects is defined
+  when:
+    - created_projects is defined
+    - item.skipped is not defined
+
+- name: Debug skipped projects (already exist)
+  debug:
+    msg: "Project '{{ item.item.name }}' already exists - skipped"
+  loop: "{{ created_projects.results }}"
+  when:
+    - created_projects is defined
+    - item.skipped is defined
 
