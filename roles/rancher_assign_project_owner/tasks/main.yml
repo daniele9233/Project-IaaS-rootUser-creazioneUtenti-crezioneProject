@@ -67,6 +67,10 @@
     validate_certs: no
   register: all_users
 
+- name: Debug users structure (first 2 users)
+  debug:
+    msg: "{{ all_users.json.data[:2] }}"
+
 - name: Extract user IDs for each username
   set_fact:
     rancher_user_ids: >-
@@ -79,7 +83,7 @@
         })
       }}
   loop: "{{ project_owner_assignments }}"
-  when: all_users.json.data | selectattr('username', 'equalto', item.username) | list | length > 0
+  ignore_errors: yes
 
 - name: Debug extracted user IDs
   debug:
