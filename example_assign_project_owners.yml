@@ -1,0 +1,105 @@
+---
+# ===============================================================
+# Esempio completo: Creazione utenti, progetti e assegnazione owners
+# ===============================================================
+#
+# Questo playbook dimostra come:
+# 1. Creare progetti in Rancher
+# 2. Creare utenti in Rancher
+# 3. Assegnare utenti come owners di progetti specifici
+#
+# ===============================================================
+
+- name: Complete Rancher Setup - Projects, Users and Ownership
+  hosts: localhost
+  gather_facts: no
+  vars:
+    # Configurazione Rancher
+    rancher_domain: "rancher.example.com"
+    rancher_password: "{{ lookup('env', 'RANCHER_PASSWORD') }}"
+    ansibleSshHost: "localhost"
+
+    # =========================================================
+    # Definizione Progetti
+    # =========================================================
+    rancher_projects:
+      - name: "project-alpha"
+        description: "Project Alpha - Development"
+      - name: "project-beta"
+        description: "Project Beta - Testing"
+      - name: "project-gamma"
+        description: "Project Gamma - Production"
+
+    # =========================================================
+    # Definizione Utenti
+    # =========================================================
+    rancher_users:
+      - username: "alice"
+        password: "TempPassword123!"
+        display_name: "Alice Developer"
+      - username: "bob"
+        password: "TempPassword456!"
+        display_name: "Bob Tester"
+      - username: "charlie"
+        password: "TempPassword789!"
+        display_name: "Charlie DevOps"
+
+    # =========================================================
+    # Assegnazione Owners ai Progetti
+    # =========================================================
+    # Ogni elemento specifica:
+    # - username: nome utente da assegnare come owner
+    # - project_name: nome del progetto di cui diventerà owner
+    # =========================================================
+    project_owner_assignments:
+      - username: "alice"
+        project_name: "project-alpha"
+      - username: "bob"
+        project_name: "project-beta"
+      - username: "charlie"
+        project_name: "project-gamma"
+      # Un utente può essere owner di più progetti:
+      - username: "charlie"
+        project_name: "project-alpha"
+
+  tasks:
+    # =========================================================
+    # STEP 1: Crea i progetti
+    # =========================================================
+    - name: "STEP 1: Create Rancher Projects"
+      include_role:
+        name: rancher_create_projects
+      tags:
+        - projects
+        - setup
+
+    # =========================================================
+    # STEP 2: Crea gli utenti
+    # =========================================================
+    - name: "STEP 2: Create Rancher Users"
+      include_role:
+        name: rancher_create_users
+      tags:
+        - users
+        - setup
+
+    # =========================================================
+    # STEP 3: Assegna gli utenti come owners dei progetti
+    # =========================================================
+    - name: "STEP 3: Assign Project Owners"
+      include_role:
+        name: rancher_assign_project_owner
+      tags:
+        - owners
+        - permissions
+
+    # =========================================================
+    # Riepilogo finale
+    # =========================================================
+    - name: "Setup completed successfully"
+      debug:
+        msg:
+          - "✅ Setup completato con successo!"
+          - "📁 Progetti creati: {{ rancher_projects | map(attribute='name') | list }}"
+          - "👥 Utenti creati: {{ rancher_users | map(attribute='username') | list }}"
+          - "🔑 Assegnazioni owner: {{ project_owner_assignments | length }}"
