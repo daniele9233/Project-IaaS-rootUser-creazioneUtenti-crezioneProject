@@ -303,21 +303,52 @@ network_check_timeout: 5
 network_check_generate_reports: true
 network_check_report_dir: "/tmp/network_reports"
 
-
 rancher_users:
+  #  - username: "s.abate.2023"
+  #  display_name: "Salvatore Abate"
+  #  password: "AnotherPass!"
+  #- username: "a.rispo.2023"
+  #    display_name: "Antonio Rispo"
+  # password: "AnotherPass!"
+  #- username: "c.pani.2023"          # ← CORRETTO (era 20234)
+  #  display_name: "Carlo Pani"
+  #  password: "AnotherPass!"
+  #- username: "c.demajo.2023"
+  #  display_name: "Claudio Demajo"
+  #  password: "AnotherPass!"
+  #- username: "c.onorino.2023"
+  #  display_name: "Ciro Onorino"
+  #  password: "AnotherPass!"
+  #- username: "d.tufano.2023"
+  #  display_name: "Domenico Tufano"
+  #  password: "AnotherPass!"
+  #- username: "f.casolaro.2023"
+  #  display_name: "Fabio Casolaro"
+  #  password: "AnotherPass!"
+  #- username: "g.iesce.2023"
+  #  display_name: "Giovanni Iesce"
+  #  password: "AnotherPass!"
+  #- username: "m.avolio.2023"
+  #  display_name: "Marco Avolio"
+  #  password: "AnotherPass!"
+  #- username: "p.viscione.2023"
+  #  display_name: "Paolo Viscione"
+  #  password: "AnotherPass!"
+  #- username: "p.sassone.2023"
+  #  display_name: "Pietro Sassone"
+  #  password: "AnotherPass!"
+  #- username: "r.ariosto.2023"
+  #  display_name: "Roberto Ariosto"
+  #  password: "AnotherPass!"
   - username: "d.pascolini"
     display_name: "Daniele Pascolini"
     password: "SuperSecure123!"
   - username: "m.rossi"
     display_name: "Mario Rossi"
     password: "AnotherPass!"
-  - username: "l.bello"
-    display_name: "Lello Bello"
+  - username: "o.altri"
+    display_name: "Ornella altri"
     password: "AnotherPass!"
-  - username: "c.pasticcio"
-    display_name: "Ciccio Pasticcio"
-    password: "AnotherPass!"
-
 
 # ============================================
 # 🧱 Rancher projects definition
@@ -325,10 +356,50 @@ rancher_users:
 rancher_api_user: "admin"
 
 rancher_projects:
-  - name: "monitoring"
-    description: "Project for monitoring tools"
-  - name: "application"
-    description: "Main application project"
-  - name: "devops"
+#  - name: "monitoring"                # ← AGGIUNTO (mancava!)
+#   description: "Project for monitoring tools"
+  - name: "devops"                    # ← AGGIUNTO (mancava!)
     description: "CI/CD and infrastructure automation"
+  - name: "other"
+    description: "Main application project other"
+      #- name: "altroproject"
+      # description: "latest"
 
+# ============================================
+# 🔑 Rancher project owner assignments
+# ============================================
+project_owner_assignments:
+    #  - username: "d.pascolini"
+    #project_name: "monitoring"
+  - username: "d.pascolini"
+    project_name: "devops"
+  - username: "m.rossi"
+    project_name: "devops"
+  - username: "o.altri"
+    project_name: "other"
+
+
+# ============================================
+# 🔧 SnowAgent Configuration
+# ============================================
+# Configurazione per l'installazione di Snow Software Agent
+
+# Tipo di agente da installare: 'oracle' o 'scalo'
+snowagent_type: "oracle"
+
+# Versioni dei pacchetti
+snowagent_oracle_version: "7.4.0"
+snowagent_scalo_version: "7.0.1"
+
+# Gestione del servizio systemd
+snowagent_enable_service: true
+snowagent_start_service: true
+snowagent_service_name: "snowagent"
+
+# Directory temporanea sul server target
+snowagent_temp_dir: "/tmp/snowagent"
+
+# Note:
+# - I pacchetti devono essere in: roles/install_snowagent/files/
+# - Il ruolo rileva automaticamente l'OS e installa .deb o .rpm
+# - Cambia snowagent_type in "scalo" per usare ScaloHTTP agent

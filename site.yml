@@ -160,3 +160,21 @@
     - role: rancher_create_projects
       tags: [create_projects]
 
+
+# TREDICESIMO PLAY: Assegnazione Project Owners
+- name: Assign Project Owners to Rancher Projects
+  hosts: masters
+  become: yes
+  gather_facts: no
+  roles:
+    - { role: rancher_assign_project_owner, tags: ['assign_owners'] }
+
+# Nuovo play per SnowAgent
+- name: Install SnowAgent on managed servers
+  hosts: all  # O gruppo specifico
+  become: yes
+  gather_facts: yes
+  vars:
+    snowagent_type: "oracle"  # o "scalo"
+  roles:
+    - { role: install_snowagent, tags: ['snowagent'] }
