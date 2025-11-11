@@ -1,0 +1,91 @@
+---
+# ===============================================================
+# Esempio Avanzato: Installazione SnowAgent su gruppi diversi
+# ===============================================================
+#
+# Questo playbook mostra come installare agenti diversi
+# su gruppi di server diversi
+#
+# ===============================================================
+
+# =========================================================
+# Play 1: Installazione Oracle Agent su database servers
+# =========================================================
+- name: Install Oracle SnowAgent on database servers
+  hosts: db_servers  # Gruppo per database servers
+  become: yes
+  gather_facts: yes
+  vars:
+    snowagent_type: "oracle"
+    snowagent_enable_service: true
+    snowagent_start_service: true
+
+  roles:
+    - { role: install_snowagent, tags: ['snowagent', 'oracle'] }
+
+  post_tasks:
+    - name: Display completion message for Oracle agents
+      debug:
+        msg: "✅ Oracle SnowAgent installed on {{ inventory_hostname }}"
+
+# =========================================================
+# Play 2: Installazione ScaloHTTP Agent su web servers
+# =========================================================
+- name: Install ScaloHTTP SnowAgent on web servers
+  hosts: web_servers  # Gruppo per web servers
+  become: yes
+  gather_facts: yes
+  vars:
+    snowagent_type: "scalo"
+    snowagent_enable_service: true
+    snowagent_start_service: true
+
+  roles:
+    - { role: install_snowagent, tags: ['snowagent', 'scalo'] }
+
+  post_tasks:
+    - name: Display completion message for ScaloHTTP agents
+      debug:
+        msg: "✅ ScaloHTTP SnowAgent installed on {{ inventory_hostname }}"
+
+# =========================================================
+# Play 3: Verifica globale su tutti i server
+# =========================================================
+- name: Global verification across all servers
+  hosts: all
+  become: yes
+  gather_facts: no
+
+  tasks:
+    - name: Check SnowAgent service status
+      systemd:
+        name: snowagent
+      register: service_status
+      ignore_errors: yes
+
+    - name: Display service status
+      debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Service Active: {{ service_status.status.ActiveState | default('N/A') }}"
+          - "Service Enabled: {{ service_status.status.UnitFileState | default('N/A') }}"
+      when: service_status.status is defined
+
+# ===============================================================
+# CONFIGURAZIONE INVENTORY DI ESEMPIO
+# ===============================================================
+#
+# [db_servers]
+# db1.example.com
+# db2.example.com
+#
+# [web_servers]
+# web1.example.com
+# web2.example.com
+# web3.example.com
+#
+# [all:vars]
+# ansible_user=ansible
+# ansible_become=yes
+#
+# ===============================================================

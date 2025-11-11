@@ -1,0 +1,131 @@
+---
+# ===============================================================
+# Role: install_snowagent
+# Description: Install Snow Software Agent on Linux systems
+# Supports: RHEL/CentOS/Rocky/AlmaLinux and Ubuntu/Debian
+# ===============================================================
+
+- name: Display installation info
+  debug:
+    msg:
+      - "Installing SnowAgent: {{ snowagent_type }}"
+      - "Target OS Family: {{ ansible_os_family }}"
+      - "Target Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+# ===============================================================
+# Determine package type based on OS
+# ===============================================================
+- name: Set package type for Debian/Ubuntu
+  set_fact:
+    snowagent_package_type: "deb"
+    snowagent_package_name: "{{ snowagent_packages[snowagent_type].deb }}"
+  when: ansible_os_family == "Debian"
+
+- name: Set package type for RHEL/CentOS/Rocky/AlmaLinux
+  set_fact:
+    snowagent_package_type: "rpm"
+    snowagent_package_name: "{{ snowagent_packages[snowagent_type].rpm }}"
+  when: ansible_os_family == "RedHat"
+
+- name: Fail if OS is not supported
+  fail:
+    msg: "Operating system {{ ansible_os_family }} is not supported. Only Debian/Ubuntu and RHEL-like are supported."
+  when: ansible_os_family not in ['Debian', 'RedHat']
+
+- name: Display selected package
+  debug:
+    msg: "Selected package: {{ snowagent_package_name }}"
+
+# ===============================================================
+# Create temporary directory on target
+# ===============================================================
+- name: Create temporary directory on target server
+  file:
+    path: "{{ snowagent_temp_dir }}"
+    state: directory
+    mode: '0755'
+
+# ===============================================================
+# Copy package to target server
+# ===============================================================
+- name: Copy SnowAgent package to target server
+  copy:
+    src: "{{ snowagent_package_name }}"
+    dest: "{{ snowagent_temp_dir }}/{{ snowagent_package_name }}"
+    mode: '0644'
+  register: package_copied
+
+- name: Display copy result
+  debug:
+    msg: "Package copied to {{ snowagent_temp_dir }}/{{ snowagent_package_name }}"
+  when: package_copied is changed
+
+# ===============================================================
+# Install package - Debian/Ubuntu (.deb)
+# ===============================================================
+- name: Install SnowAgent on Debian/Ubuntu
+  apt:
+    deb: "{{ snowagent_temp_dir }}/{{ snowagent_package_name }}"
+    state: present
+  when: ansible_os_family == "Debian"
+  register: install_result_deb
+
+# ===============================================================
+# Install package - RHEL/CentOS (.rpm)
+# ===============================================================
+- name: Install SnowAgent on RHEL/CentOS/Rocky/AlmaLinux
+  yum:
+    name: "{{ snowagent_temp_dir }}/{{ snowagent_package_name }}"
+    state: present
+    disable_gpg_check: yes
+  when: ansible_os_family == "RedHat"
+  register: install_result_rpm
+
+# ===============================================================
+# Service management (optional)
+# ===============================================================
+- name: Check if SnowAgent service exists
+  systemd:
+    name: "{{ snowagent_service_name }}"
+  register: service_status
+  ignore_errors: yes
+  when: snowagent_enable_service or snowagent_start_service
+
+- name: Enable SnowAgent service
+  systemd:
+    name: "{{ snowagent_service_name }}"
+    enabled: yes
+  when:
+    - snowagent_enable_service
+    - service_status is defined
+    - service_status.status is defined
+  ignore_errors: yes
+
+- name: Start SnowAgent service
+  systemd:
+    name: "{{ snowagent_service_name }}"
+    state: started
+  when:
+    - snowagent_start_service
+    - service_status is defined
+    - service_status.status is defined
+  ignore_errors: yes
+
+# ===============================================================
+# Cleanup temporary directory
+# ===============================================================
+- name: Remove temporary directory
+  file:
+    path: "{{ snowagent_temp_dir }}"
+    state: absent
+
+# ===============================================================
+# Installation summary
+# ===============================================================
+- name: Display installation summary
+  debug:
+    msg:
+      - "✅ SnowAgent installation completed successfully!"
+      - "Agent type: {{ snowagent_type }}"
+      - "Package: {{ snowagent_package_name }}"
+      - "OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"

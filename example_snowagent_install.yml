@@ -1,0 +1,101 @@
+---
+# ===============================================================
+# Esempio: Installazione SnowAgent su server target
+# ===============================================================
+#
+# Questo playbook installa Snow Software Agent su server Linux
+# Il ruolo rileva automaticamente l'OS e installa il pacchetto corretto
+#
+# ===============================================================
+
+- name: Install SnowAgent on target servers
+  hosts: all  # Modifica con il tuo gruppo di host
+  become: yes
+  gather_facts: yes
+
+  vars:
+    # =========================================================
+    # Configurazione SnowAgent
+    # =========================================================
+
+    # Tipo di agente: 'oracle' o 'scalo'
+    snowagent_type: "oracle"
+
+    # Gestione servizio
+    snowagent_enable_service: true
+    snowagent_start_service: true
+    snowagent_service_name: "snowagent"
+
+  # =========================================================
+  # Pre-tasks: Aggiornamento cache pacchetti (opzionale)
+  # =========================================================
+  pre_tasks:
+    - name: Update apt cache (Ubuntu/Debian)
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+      tags: [snowagent, pre]
+
+    - name: Update yum cache (RHEL-like)
+      yum:
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+      tags: [snowagent, pre]
+
+  # =========================================================
+  # Ruolo: Installazione SnowAgent
+  # =========================================================
+  roles:
+    - role: install_snowagent
+      tags: [snowagent]
+
+  # =========================================================
+  # Post-tasks: Verifica installazione
+  # =========================================================
+  post_tasks:
+    - name: Check if SnowAgent binary exists
+      stat:
+        path: /usr/bin/snowagent
+      register: snowagent_binary
+      ignore_errors: yes
+      tags: [snowagent, verify]
+
+    - name: Display verification result
+      debug:
+        msg: "✅ SnowAgent binary found: {{ snowagent_binary.stat.exists | default(false) }}"
+      tags: [snowagent, verify]
+
+    - name: Get SnowAgent version (if available)
+      command: snowagent --version
+      register: snowagent_version
+      ignore_errors: yes
+      changed_when: false
+      tags: [snowagent, verify]
+
+    - name: Display SnowAgent version
+      debug:
+        msg: "SnowAgent version: {{ snowagent_version.stdout | default('Version command not available') }}"
+      when: snowagent_version is defined
+      tags: [snowagent, verify]
+
+# ===============================================================
+# ESEMPI DI UTILIZZO
+# ===============================================================
+#
+# 1. Installazione su tutti i server:
+#    ansible-playbook -i inventory.ini example_snowagent_install.yml
+#
+# 2. Installazione solo su server specifici:
+#    ansible-playbook -i inventory.ini example_snowagent_install.yml --limit "server1,server2"
+#
+# 3. Installazione con tipo agente diverso:
+#    ansible-playbook -i inventory.ini example_snowagent_install.yml -e "snowagent_type=scalo"
+#
+# 4. Dry-run (check mode):
+#    ansible-playbook -i inventory.ini example_snowagent_install.yml --check
+#
+# 5. Installazione con verbosità aumentata:
+#    ansible-playbook -i inventory.ini example_snowagent_install.yml -vvv
+#
+# ===============================================================

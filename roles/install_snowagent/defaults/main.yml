@@ -1,0 +1,32 @@
+---
+# ===============================================================
+# SnowAgent Installation - Default Variables
+# ===============================================================
+
+# Tipo di agente da installare: 'oracle' o 'scalo'
+snowagent_type: "oracle"
+
+# Versioni dei pacchetti
+snowagent_oracle_version: "7.4.0"
+snowagent_scalo_version: "7.0.1"
+
+# Nome dei pacchetti (senza estensione)
+snowagent_packages:
+  oracle:
+    deb: "ALMAVIVA-740-Linux-Oracle-snowagent-7.4.0-x64.deb"
+    rpm: "ALMAVIVA-740-Linux-Oracle-snowagent-7.4.0-x64.rpm"
+  scalo:
+    deb: "ScaloHTTP-snowagent-7.0.1-x64.deb"
+    rpm: "ScaloHTTP-snowagent-7.0.1-x64.rpm"
+
+# Directory temporanea sul target
+snowagent_temp_dir: "/tmp/snowagent"
+
+# Nome del servizio (se applicabile)
+snowagent_service_name: "snowagent"
+
+# Abilita il servizio all'avvio
+snowagent_enable_service: true
+
+# Avvia il servizio dopo l'installazione
+snowagent_start_service: true
